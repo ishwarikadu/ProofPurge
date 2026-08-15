@@ -1,5 +1,12 @@
 from fastapi import FastAPI
 
+from database import engine, Base
+import models
+
+
+Base.metadata.create_all(bind=engine)
+
+
 app = FastAPI(
     title="ProofPurge API",
     description="Verified Data Sanitization & Device Lifecycle Prototype",
