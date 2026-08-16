@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from database import engine, Base, get_db
 from fastapi.middleware.cors import CORSMiddleware
 import models
+import random
 from auth import (
     hash_password,
     verify_password,
@@ -339,20 +340,28 @@ def verify_device(
             status_code=400,
             detail="No pending sanitization record found"
         )
+
     sectors_checked = 1000
-    sectors_verified = 1000
-    verification_percentage = int(
+
+    failure_simulation = random.random() < 0.2
+
+    if failure_simulation:
+        sectors_verified = random.randint(850, 999)
+    else:
+        sectors_verified = sectors_checked
+
+        verification_percentage = int(
         (sectors_verified / sectors_checked) * 100
     )
 
-    if verification_percentage == 100:
-        result = "VERIFIED"
-        device.status = "VERIFIED"
-        sanitization_record.verification_status = "VERIFIED"
-    else:
-        result = "FAILED"
-        device.status = "FAILED"
-        sanitization_record.verification_status = "FAILED"
+        if verification_percentage >= 100:
+          result = "VERIFIED"
+          device.status = "VERIFIED"
+          sanitization_record.verification_status = "VERIFIED"
+        else:
+          result = "FAILED"
+          device.status = "FAILED"
+          sanitization_record.verification_status = "FAILED"
 
     verification_record = models.VerificationRecord(
         device_id=device.id,
