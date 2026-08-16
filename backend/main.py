@@ -625,3 +625,37 @@ def verify_certificate(
         ),
         "issued_at": certificate.issued_at
     }
+
+@app.get(
+    "/devices/{device_id}/audit",
+    response_model=list[AuditEventResponse]
+)
+def get_device_audit(
+    device_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.device_id == device_id,
+            models.Device.user_id == current_user.id
+        )
+        .first()
+    )
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+    events = (
+        db.query(models.AuditEvent)
+        .filter(
+            models.AuditEvent.device_id == device.id
+        )
+        .order_by(
+            models.AuditEvent.id.asc()
+        )
+        .all()
+    )
+    return events
