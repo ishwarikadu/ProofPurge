@@ -16,6 +16,7 @@ from auth import (
     get_current_user
 )
 from schemas import (
+    CertificateVerificationResponse,
     UserRegister,
     UserLogin,
     TokenResponse,
@@ -504,3 +505,69 @@ def get_certificate(
             detail="Certificate not found"
         )
     return certificate
+
+@app.get(
+    "/verify-certificate/{certificate_id}",
+    response_model=CertificateVerificationResponse
+)
+def verify_certificate(
+    certificate_id: str,
+    db: Session = Depends(get_db)
+):
+    certificate = (
+        db.query(models.Certificate)
+        .filter(
+            models.Certificate.certificate_id == certificate_id
+        )
+        .first()
+    )
+    if certificate is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Certificate not found"
+        )
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.id == certificate.device_id
+        )
+        .first()
+    )
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Associated device not found"
+        )
+    # Reconstruct the original certificate data
+    certificate_data = (
+        f"{certificate.certificate_id}|"
+        f"{device.device_id}|"
+        f"{device.model}|"
+        f"{device.storage}|"
+        f"{certificate.sanitization_method}|"
+        f"{certificate.verification_percentage}|"
+        f"{certificate.verification_result}|"
+        f"{certificate.issued_at}"
+    )
+    calculated_hash = hashlib.sha256(
+        certificate_data.encode("utf-8")
+    ).hexdigest()
+    valid = (
+        calculated_hash == certificate.certificate_hash
+    )
+    return {
+        "valid": valid,
+        "certificate_id": certificate.certificate_id,
+        "device_id": device.device_id,
+        "device_model": device.model,
+        "device_type": device.device_type,
+        "storage": device.storage,
+        "sanitization_method": certificate.sanitization_method,
+        "verification_percentage": (
+            certificate.verification_percentage
+        ),
+        "verification_result": (
+            certificate.verification_result
+        ),
+        "issued_at": certificate.issued_at
+    }
