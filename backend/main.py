@@ -482,3 +482,25 @@ def generate_certificate(
     db.commit()
     db.refresh(certificate)
     return certificate
+
+@app.get(
+    "/certificates/{certificate_id}",
+    response_model=CertificateResponse
+)
+def get_certificate(
+    certificate_id: str,
+    db: Session = Depends(get_db)
+):
+    certificate = (
+        db.query(models.Certificate)
+        .filter(
+            models.Certificate.certificate_id == certificate_id
+        )
+        .first()
+    )
+    if certificate is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Certificate not found"
+        )
+    return certificate

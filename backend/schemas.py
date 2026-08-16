@@ -68,3 +68,15 @@ class CertificateResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class CertificateVerificationResponse(BaseModel):
+    valid: bool
+    certificate_id: str
+    device_id: str
+    device_model: str
+    device_type: str
+    storage: str
+    sanitization_method: str
+    verification_percentage: int
+    verification_result: str
+    issued_at: str
