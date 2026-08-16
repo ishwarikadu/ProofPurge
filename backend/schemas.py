@@ -96,3 +96,14 @@ class QRCodeResponse(BaseModel):
     certificate_id: str
     verification_url: str
     qr_code: str
+
+class AuditAnchorResponse(BaseModel):
+    id: int
+    device_id: int
+    anchor_hash: str
+    blockchain_status: str
+    transaction_id: str | None
+    anchored_at: str
+
+    class Config:
+        from_attributes = True

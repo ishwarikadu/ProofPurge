@@ -44,6 +44,11 @@ class Device(Base):
     "AuditEvent",
     back_populates="device"
 )
+    audit_anchor = relationship(
+    "AuditAnchor",
+    back_populates="device",
+    uselist=False
+)
     
 class SanitizationRecord(Base):
     __tablename__ = "sanitization_records"
@@ -180,4 +185,35 @@ class AuditEvent(Base):
         "Device",
         back_populates="audit_events"
     )
-    
+
+class AuditAnchor(Base):
+    __tablename__ = "audit_anchors"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(
+        Integer,
+        ForeignKey("devices.id"),
+        nullable=False
+    )
+    anchor_hash = Column(
+        String,
+        unique=True,
+        nullable=False
+    )
+    blockchain_status = Column(
+        String,
+        nullable=False,
+        default="SIMULATED"
+    )
+    transaction_id = Column(
+        String,
+        nullable=True
+    )
+    anchored_at = Column(
+        String,
+        nullable=False
+    )
+    device = relationship(
+        "Device",
+        back_populates="audit_anchor"
+    )    

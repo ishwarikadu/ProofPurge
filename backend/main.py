@@ -30,7 +30,8 @@ from schemas import (
     VerificationResponse,
     CertificateResponse,
     AuditEventResponse,
-    QRCodeResponse
+    QRCodeResponse,
+    AuditAnchorResponse
 )
 
 Base.metadata.create_all(bind=engine)
@@ -776,3 +777,83 @@ def get_certificate_qr(
         "verification_url": verification_url,
         "qr_code": qr_base64
     } 
+
+@app.post(
+    "/devices/{device_id}/audit/anchor",
+    response_model=AuditAnchorResponse
+)
+def create_audit_anchor(
+    device_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.device_id == device_id,
+            models.Device.user_id == current_user.id
+        )
+        .first()
+    )
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+    if device.status != "CERTIFIED":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Audit can only be anchored "
+                f"for CERTIFIED devices. "
+                f"Current status: {device.status}"
+            )
+        )
+    existing_anchor = (
+        db.query(models.AuditAnchor)
+        .filter(
+            models.AuditAnchor.device_id == device.id
+        )
+        .first()
+    )
+    if existing_anchor:
+        return existing_anchor
+    audit_events = (
+        db.query(models.AuditEvent)
+        .filter(
+            models.AuditEvent.device_id == device.id
+        )
+        .order_by(
+            models.AuditEvent.id.asc()
+        )
+        .all()
+    )
+    if not audit_events:
+        raise HTTPException(
+            status_code=400,
+            detail="No audit events found"
+        )
+    previous_hash = ""
+    for event in audit_events:
+        chain_data = (
+            f"{previous_hash}|"
+            f"{event.event_hash}"
+        )
+        previous_hash = hashlib.sha256(
+            chain_data.encode("utf-8")
+        ).hexdigest()
+    anchor_hash = previous_hash
+    anchored_at = datetime.now(
+        timezone.utc
+    ).isoformat()
+    anchor = models.AuditAnchor(
+        device_id=device.id,
+        anchor_hash=anchor_hash,
+        blockchain_status="SIMULATED",
+        transaction_id=None,
+        anchored_at=anchored_at
+    )
+    db.add(anchor)
+    db.commit()
+    db.refresh(anchor)
+    return anchor
