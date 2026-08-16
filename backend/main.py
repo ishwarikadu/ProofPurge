@@ -3,7 +3,10 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from database import engine, Base, get_db
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime, timezone
 import models
+import hashlib
+import uuid
 import random
 from auth import (
     hash_password,
@@ -20,7 +23,8 @@ from schemas import (
     DeviceResponse,
     DeviceStatusUpdate,
     SanitizationResponse,
-    VerificationResponse
+    VerificationResponse,
+    CertificateResponse
 )
 
 Base.metadata.create_all(bind=engine)
@@ -375,3 +379,106 @@ def verify_device(
     db.commit()
     db.refresh(verification_record)
     return verification_record
+
+@app.post(
+    "/devices/{device_id}/certificate",
+    response_model=CertificateResponse
+)
+def generate_certificate(
+    device_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.device_id == device_id,
+            models.Device.user_id == current_user.id
+        )
+        .first()
+    )
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+    if device.status != "VERIFIED":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Certificate can only be generated "
+                f"for VERIFIED devices. "
+                f"Current status: {device.status}"
+            )
+        )
+    existing_certificate = (
+        db.query(models.Certificate)
+        .filter(
+            models.Certificate.device_id == device.id
+        )
+        .first()
+    )
+    if existing_certificate:
+        return existing_certificate
+    verification_record = (
+        db.query(models.VerificationRecord)
+        .filter(
+            models.VerificationRecord.device_id == device.id,
+            models.VerificationRecord.result == "VERIFIED"
+        )
+        .order_by(
+            models.VerificationRecord.id.desc()
+        )
+        .first()
+    )
+    if verification_record is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No successful verification record found"
+        )
+    sanitization_record = (
+        db.query(models.SanitizationRecord)
+        .filter(
+            models.SanitizationRecord.id
+            == verification_record.sanitization_id
+        )
+        .first()
+    )
+    if sanitization_record is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Sanitization record not found"
+        )
+    certificate_id = f"PP-CERT-{uuid.uuid4().hex[:12].upper()}"
+    issued_at = datetime.now(
+        timezone.utc
+    ).isoformat()
+    certificate_data = (
+        f"{certificate_id}|"
+        f"{device.device_id}|"
+        f"{device.model}|"
+        f"{device.storage}|"
+        f"{sanitization_record.method}|"
+        f"{verification_record.verification_percentage}|"
+        f"{verification_record.result}|"
+        f"{issued_at}"
+    )
+    certificate_hash = hashlib.sha256(
+        certificate_data.encode("utf-8")
+    ).hexdigest()
+    certificate = models.Certificate(
+        certificate_id=certificate_id,
+        device_id=device.id,
+        sanitization_method=sanitization_record.method,
+        verification_percentage=(
+            verification_record.verification_percentage
+        ),
+        verification_result=verification_record.result,
+        certificate_hash=certificate_hash,
+        issued_at=issued_at
+    )
+    db.add(certificate)
+    device.status = "CERTIFIED"
+    db.commit()
+    db.refresh(certificate)
+    return certificate

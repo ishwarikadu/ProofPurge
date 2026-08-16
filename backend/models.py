@@ -34,7 +34,12 @@ class Device(Base):
     verification_records = relationship(
     "VerificationRecord",
     back_populates="device"
-    )
+)
+    certificate = relationship(
+    "Certificate",
+    back_populates="device",
+    uselist=False
+)
     
 class SanitizationRecord(Base):
     __tablename__ = "sanitization_records"
@@ -99,5 +104,46 @@ class VerificationRecord(Base):
     device = relationship(
         "Device",
         back_populates="verification_records"
+    )
+
+class Certificate(Base):
+    __tablename__ = "certificates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    certificate_id = Column(
+        String,
+        unique=True,
+        nullable=False,
+        index=True
+    )
+    device_id = Column(
+        Integer,
+        ForeignKey("devices.id"),
+        nullable=False
+    )
+    sanitization_method = Column(
+        String,
+        nullable=False
+    )
+    verification_percentage = Column(
+        Integer,
+        nullable=False
+    )
+    verification_result = Column(
+        String,
+        nullable=False
+    )
+    certificate_hash = Column(
+        String,
+        unique=True,
+        nullable=False
+    )
+    issued_at = Column(
+        String,
+        nullable=False
+    )
+    device = relationship(
+        "Device",
+        back_populates="certificate"
     )
     

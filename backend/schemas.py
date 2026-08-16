@@ -43,6 +43,7 @@ class SanitizationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
 class VerificationResponse(BaseModel):
     id: int
     device_id: int
@@ -51,6 +52,19 @@ class VerificationResponse(BaseModel):
     sectors_verified: int
     verification_percentage: int
     result: str
+
+    class Config:
+        from_attributes = True
+
+class CertificateResponse(BaseModel):
+    id: int
+    certificate_id: str
+    device_id: int
+    sanitization_method: str
+    verification_percentage: int
+    verification_result: str
+    certificate_hash: str
+    issued_at: str
 
     class Config:
         from_attributes = True
