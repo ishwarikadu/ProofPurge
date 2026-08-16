@@ -25,7 +25,8 @@ from schemas import (
     DeviceStatusUpdate,
     SanitizationResponse,
     VerificationResponse,
-    CertificateResponse
+    CertificateResponse,
+    AuditEventResponse
 )
 
 Base.metadata.create_all(bind=engine)
@@ -158,9 +159,36 @@ def get_current_user(
             status_code=401,
             detail="User not found"
         )
-
     return user
 
+def create_audit_event(
+    db: Session,
+    device: models.Device,
+    event_type: str,
+    description: str
+):
+    timestamp = datetime.now(
+        timezone.utc
+    ).isoformat()
+    event_data = (
+        f"{device.device_id}|"
+        f"{event_type}|"
+        f"{description}|"
+        f"{timestamp}"
+    )
+    event_hash = hashlib.sha256(
+        event_data.encode("utf-8")
+    ).hexdigest()
+    event = models.AuditEvent(
+        device_id=device.id,
+        event_type=event_type,
+        description=description,
+        timestamp=timestamp,
+        event_hash=event_hash
+    )
+    db.add(event)
+    return event
+    s
 ALLOWED_TRANSITIONS = {
     "READY_TO_SANITIZE": ["SANITIZING"],
     "SANITIZING": ["VERIFICATION"],
@@ -201,9 +229,16 @@ def register_device(
     )
 
     db.add(new_device)
+    db.flush()
+
+    create_audit_event(
+    db,
+    new_device,
+    "DEVICE_REGISTERED",
+    "Device registered successfully"
+)
     db.commit()
     db.refresh(new_device)
-
     return new_device
 
 @app.patch(
@@ -286,6 +321,12 @@ def sanitize_device(
             )
         )
     device.status = "SANITIZING"
+    create_audit_event(
+    db,
+    device,
+    "SANITIZATION_STARTED",
+    "Device sanitization started"
+)
     sanitization_record = models.SanitizationRecord(
         device_id=device.id,
         method="SECURE_ERASE_SIMULATION",
@@ -295,6 +336,12 @@ def sanitize_device(
     )
     db.add(sanitization_record)
     device.status = "VERIFICATION"
+    create_audit_event(
+    db,
+    device,
+    "SANITIZATION_COMPLETED",
+    "Device sanitization simulation completed successfully"
+)
     db.commit()
     db.refresh(sanitization_record)
     return sanitization_record
@@ -367,6 +414,13 @@ def verify_device(
           result = "FAILED"
           device.status = "FAILED"
           sanitization_record.verification_status = "FAILED"
+
+        create_audit_event(
+         db,
+        device,
+        "VERIFICATION_COMPLETED",
+        f"Verification result: {result}"
+)
 
     verification_record = models.VerificationRecord(
         device_id=device.id,

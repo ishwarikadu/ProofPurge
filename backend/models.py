@@ -40,6 +40,10 @@ class Device(Base):
     back_populates="device",
     uselist=False
 )
+    audit_events = relationship(
+    "AuditEvent",
+    back_populates="device"
+)
     
 class SanitizationRecord(Base):
     __tablename__ = "sanitization_records"
@@ -145,5 +149,35 @@ class Certificate(Base):
     device = relationship(
         "Device",
         back_populates="certificate"
+    )
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(
+        Integer,
+        ForeignKey("devices.id"),
+        nullable=False
+    )
+    event_type = Column(
+        String,
+        nullable=False
+    )
+    description = Column(
+        String,
+        nullable=False
+    )
+    timestamp = Column(
+        String,
+        nullable=False
+    )
+    event_hash = Column(
+        String,
+        nullable=False
+    )
+    device = relationship(
+        "Device",
+        back_populates="audit_events"
     )
     

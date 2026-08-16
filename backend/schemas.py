@@ -80,3 +80,14 @@ class CertificateVerificationResponse(BaseModel):
     verification_percentage: int
     verification_result: str
     issued_at: str
+
+class AuditEventResponse(BaseModel):
+    id: int
+    device_id: int
+    event_type: str
+    description: str
+    timestamp: str
+    event_hash: str
+
+    class Config:
+        from_attributes = True
