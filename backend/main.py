@@ -18,7 +18,8 @@ from schemas import (
     DeviceCreate,
     DeviceResponse,
     DeviceStatusUpdate,
-    SanitizationResponse
+    SanitizationResponse,
+    VerificationResponse
 )
 
 Base.metadata.create_all(bind=engine)
@@ -265,13 +266,11 @@ def sanitize_device(
         )
         .first()
     )
-
     if device is None:
         raise HTTPException(
             status_code=404,
             detail="Device not found"
         )
-
     if device.status != "READY_TO_SANITIZE":
         raise HTTPException(
             status_code=400,
@@ -293,3 +292,77 @@ def sanitize_device(
     db.commit()
     db.refresh(sanitization_record)
     return sanitization_record
+
+@app.post(
+    "/devices/{device_id}/verify",
+    response_model=VerificationResponse
+)
+def verify_device(
+    device_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.device_id == device_id,
+            models.Device.user_id == current_user.id
+        )
+        .first()
+    )
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+    if device.status != "VERIFICATION":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Device cannot be verified "
+                f"from status {device.status}"
+            )
+        )
+    sanitization_record = (
+        db.query(models.SanitizationRecord)
+        .filter(
+            models.SanitizationRecord.device_id == device.id,
+            models.SanitizationRecord.verification_status == "PENDING"
+        )
+        .order_by(
+            models.SanitizationRecord.id.desc()
+        )
+        .first()
+    )
+    if sanitization_record is None:
+        raise HTTPException(
+            status_code=400,
+            detail="No pending sanitization record found"
+        )
+    sectors_checked = 1000
+    sectors_verified = 1000
+    verification_percentage = int(
+        (sectors_verified / sectors_checked) * 100
+    )
+
+    if verification_percentage == 100:
+        result = "VERIFIED"
+        device.status = "VERIFIED"
+        sanitization_record.verification_status = "VERIFIED"
+    else:
+        result = "FAILED"
+        device.status = "FAILED"
+        sanitization_record.verification_status = "FAILED"
+
+    verification_record = models.VerificationRecord(
+        device_id=device.id,
+        sanitization_id=sanitization_record.id,
+        sectors_checked=sectors_checked,
+        sectors_verified=sectors_verified,
+        verification_percentage=verification_percentage,
+        result=result
+    )
+    db.add(verification_record)
+    db.commit()
+    db.refresh(verification_record)
+    return verification_record

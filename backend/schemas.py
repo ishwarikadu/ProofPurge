@@ -43,3 +43,14 @@ class SanitizationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+class VerificationResponse(BaseModel):
+    id: int
+    device_id: int
+    sanitization_id: int
+    sectors_checked: int
+    sectors_verified: int
+    verification_percentage: int
+    result: str
+
+    class Config:
+        from_attributes = True

@@ -31,6 +31,10 @@ class Device(Base):
     "SanitizationRecord",
     back_populates="device"
 )
+    verification_records = relationship(
+    "VerificationRecord",
+    back_populates="device"
+    )
     
 class SanitizationRecord(Base):
     __tablename__ = "sanitization_records"
@@ -61,5 +65,39 @@ class SanitizationRecord(Base):
     device = relationship(
         "Device",
         back_populates="sanitization_records"
+    )
+class VerificationRecord(Base):
+    __tablename__ = "verification_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+    device_id = Column(
+        Integer,
+        ForeignKey("devices.id"),
+        nullable=False
+    )
+    sanitization_id = Column(
+        Integer,
+        ForeignKey("sanitization_records.id"),
+        nullable=False
+    )
+    sectors_checked = Column(
+        Integer,
+        nullable=False
+    )
+    sectors_verified = Column(
+        Integer,
+        nullable=False
+    )
+    verification_percentage = Column(
+        Integer,
+        nullable=False
+    )
+    result = Column(
+        String,
+        nullable=False
+    )
+    device = relationship(
+        "Device",
+        back_populates="verification_records"
     )
     
