@@ -1,45 +1,22 @@
-from fastapi import FastAPI
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
+
 from database import engine, Base, get_db
 import models
+
 from auth import (
     hash_password,
     verify_password,
     create_access_token
 )
+
 from schemas import (
     UserRegister,
     UserLogin,
     TokenResponse
 )
 
-from database import engine, Base
-import models
-
 Base.metadata.create_all(bind=engine)
-
-app = FastAPI(
-    title="ProofPurge API",
-    description="Verified Data Sanitization & Device Lifecycle Prototype",
-    version="0.1.0"
-)
-
-@app.get("/")
-def root():
-    return {
-        "project": "ProofPurge",
-        "status": "running"
-    }
-
-@app.get("/health")
-def health():
-    return {
-        "status": "healthy"
-    }
-
-Base.metadata.create_all(bind=engine)
-
 app = FastAPI(
     title="ProofPurge API",
     description="Verified Data Sanitization & Device Lifecycle Prototype",
