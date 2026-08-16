@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 
 from database import Base
 
-
 class User(Base):
     __tablename__ = "users"
 
@@ -14,7 +13,6 @@ class User(Base):
     role = Column(String, default="B2C")
 
     devices = relationship("Device", back_populates="owner")
-
 
 class Device(Base):
     __tablename__ = "devices"

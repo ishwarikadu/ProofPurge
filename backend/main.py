@@ -3,9 +3,7 @@ from fastapi import FastAPI
 from database import engine, Base
 import models
 
-
 Base.metadata.create_all(bind=engine)
-
 
 app = FastAPI(
     title="ProofPurge API",
@@ -13,14 +11,12 @@ app = FastAPI(
     version="0.1.0"
 )
 
-
 @app.get("/")
 def root():
     return {
         "project": "ProofPurge",
         "status": "running"
     }
-
 
 @app.get("/health")
 def health():
