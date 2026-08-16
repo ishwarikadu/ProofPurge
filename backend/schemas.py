@@ -91,3 +91,8 @@ class AuditEventResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class QRCodeResponse(BaseModel):
+    certificate_id: str
+    verification_url: str
+    qr_code: str

@@ -8,6 +8,9 @@ import models
 import hashlib
 import uuid
 import random
+import qrcode
+import io
+import base64
 from auth import (
     hash_password,
     verify_password,
@@ -26,7 +29,8 @@ from schemas import (
     SanitizationResponse,
     VerificationResponse,
     CertificateResponse,
-    AuditEventResponse
+    AuditEventResponse,
+    QRCodeResponse
 )
 
 Base.metadata.create_all(bind=engine)
@@ -494,7 +498,7 @@ def generate_certificate(
 
         db.commit()
 
-    return existing_certificate
+        return existing_certificate
     verification_record = (
         db.query(models.VerificationRecord)
         .filter(
@@ -685,3 +689,90 @@ def get_device_audit(
         .all()
     )
     return events
+
+@app.get(
+    "/devices/{device_id}/certificate",
+    response_model=CertificateResponse
+)
+def get_device_certificate(
+    device_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.device_id == device_id,
+            models.Device.user_id == current_user.id
+        )
+        .first()
+    )
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+    certificate = (
+        db.query(models.Certificate)
+        .filter(
+            models.Certificate.device_id == device.id
+        )
+        .first()
+    )
+    if certificate is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Certificate not found for this device"
+        )
+    return certificate
+
+@app.get(
+    "/devices/{device_id}/certificate/qr",
+    response_model=QRCodeResponse
+)
+def get_certificate_qr(
+    device_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.device_id == device_id,
+            models.Device.user_id == current_user.id
+        )
+        .first()
+    )
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+    certificate = (
+        db.query(models.Certificate)
+        .filter(
+            models.Certificate.device_id == device.id
+        )
+        .first()
+    )
+    if certificate is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Certificate not found for this device"
+        )
+    verification_url = (
+        f"http://127.0.0.1:8000/"
+        f"verify-certificate/"
+        f"{certificate.certificate_id}"
+    )
+    qr = qrcode.make(verification_url)
+    buffer = io.BytesIO()
+    qr.save(buffer, format="PNG")
+    qr_base64 = base64.b64encode(
+        buffer.getvalue()
+    ).decode("utf-8")
+    return {
+        "certificate_id": certificate.certificate_id,
+        "verification_url": verification_url,
+        "qr_code": qr_base64
+    } 
