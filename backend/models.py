@@ -27,5 +27,39 @@ class Device(Base):
     )
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     owner = relationship("User", back_populates="devices")
+    sanitization_records = relationship(
+    "SanitizationRecord",
+    back_populates="device"
+)
+    
+class SanitizationRecord(Base):
+    __tablename__ = "sanitization_records"
 
+    id = Column(Integer, primary_key=True, index=True)
+
+    device_id = Column(
+        Integer,
+        ForeignKey("devices.id"),
+        nullable=False
+    )
+    method = Column(
+        String,
+        nullable=False
+    )
+    passes = Column(
+        Integer,
+        nullable=False
+    )
+    result = Column(
+        String,
+        nullable=False
+    )
+    verification_status = Column(
+        String,
+        default="PENDING"
+    )
+    device = relationship(
+        "Device",
+        back_populates="sanitization_records"
+    )
     

@@ -29,3 +29,17 @@ class DeviceResponse(BaseModel):
 
 class Config:
     from_attributes = True
+
+class DeviceStatusUpdate(BaseModel):
+    status: str
+
+class SanitizationResponse(BaseModel):
+    id: int
+    device_id: int
+    method: str
+    passes: int
+    result: str
+    verification_status: str
+
+    class Config:
+        from_attributes = True

@@ -2,19 +2,23 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from database import engine, Base, get_db
+from fastapi.middleware.cors import CORSMiddleware
 import models
 from auth import (
     hash_password,
     verify_password,
     create_access_token,
-    decode_access_token
+    decode_access_token,
+    get_current_user
 )
 from schemas import (
     UserRegister,
     UserLogin,
     TokenResponse,
     DeviceCreate,
-    DeviceResponse
+    DeviceResponse,
+    DeviceStatusUpdate,
+    SanitizationResponse
 )
 
 Base.metadata.create_all(bind=engine)
@@ -22,6 +26,13 @@ app = FastAPI(
     title="ProofPurge API",
     description="Verified Data Sanitization & Device Lifecycle Prototype",
     version="0.1.0"
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")
@@ -142,6 +153,16 @@ def get_current_user(
         )
 
     return user
+
+ALLOWED_TRANSITIONS = {
+    "READY_TO_SANITIZE": ["SANITIZING"],
+    "SANITIZING": ["VERIFICATION"],
+    "VERIFICATION": ["VERIFIED", "FAILED"],
+    "FAILED": ["SANITIZING", "MANUAL_REVIEW"],
+    "VERIFIED": ["CERTIFIED"],
+    "CERTIFIED": []
+}
+
 @app.post(
     "/devices",
     response_model=DeviceResponse
@@ -177,3 +198,98 @@ def register_device(
     db.refresh(new_device)
 
     return new_device
+
+@app.patch(
+    "/devices/{device_id}/status",
+    response_model=DeviceResponse
+)
+def update_device_status(
+    device_id: str,
+    status_update: DeviceStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.device_id == device_id,
+            models.Device.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    current_status = device.status
+    new_status = status_update.status
+
+    allowed_statuses = ALLOWED_TRANSITIONS.get(
+        current_status,
+        []
+    )
+
+    if new_status not in allowed_statuses:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Invalid status transition: "
+                f"{current_status} → {new_status}"
+            )
+        )
+
+    device.status = new_status
+
+    db.commit()
+    db.refresh(device)
+
+    return device
+
+@app.post(
+    "/devices/{device_id}/sanitize",
+    response_model=SanitizationResponse
+)
+def sanitize_device(
+    device_id: str,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    device = (
+        db.query(models.Device)
+        .filter(
+            models.Device.device_id == device_id,
+            models.Device.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    if device.status != "READY_TO_SANITIZE":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Device cannot be sanitized "
+                f"from status {device.status}"
+            )
+        )
+    device.status = "SANITIZING"
+    sanitization_record = models.SanitizationRecord(
+        device_id=device.id,
+        method="SECURE_ERASE_SIMULATION",
+        passes=1,
+        result="SUCCESS",
+        verification_status="PENDING"
+    )
+    db.add(sanitization_record)
+    device.status = "VERIFICATION"
+    db.commit()
+    db.refresh(sanitization_record)
+    return sanitization_record
