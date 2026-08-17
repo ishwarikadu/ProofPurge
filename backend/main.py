@@ -11,6 +11,7 @@ import random
 import qrcode
 import io
 import base64
+import os
 from auth import (
     hash_password,
     verify_password,
@@ -47,6 +48,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+BASE_URL = os.environ.get("PROOFPURGE_BASE_URL", "http://127.0.0.1:8000")
 
 @app.get("/")
 def root():
@@ -139,33 +141,6 @@ def login(
     }
 security = HTTPBearer()
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
-):
-    token = credentials.credentials
-
-    user_id = decode_access_token(token)
-
-    if user_id is None:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid or expired token"
-        )
-
-    user = (
-        db.query(models.User)
-        .filter(models.User.id == int(user_id))
-        .first()
-    )
-
-    if user is None:
-        raise HTTPException(
-            status_code=401,
-            detail="User not found"
-        )
-    return user
-
 def create_audit_event(
     db: Session,
     device: models.Device,
@@ -193,7 +168,7 @@ def create_audit_event(
     )
     db.add(event)
     return event
-    s
+
 ALLOWED_TRANSITIONS = {
     "READY_TO_SANITIZE": ["SANITIZING"],
     "SANITIZING": ["VERIFICATION"],
@@ -202,6 +177,22 @@ ALLOWED_TRANSITIONS = {
     "VERIFIED": ["CERTIFIED"],
     "CERTIFIED": []
 }
+
+@app.get(
+    "/devices",
+    response_model=list[DeviceResponse]
+)
+def list_devices(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    devices = (
+        db.query(models.Device)
+        .filter(models.Device.user_id == current_user.id)
+        .order_by(models.Device.id.desc())
+        .all()
+    )
+    return devices
 
 @app.post(
     "/devices",
@@ -407,24 +398,24 @@ def verify_device(
     else:
         sectors_verified = sectors_checked
 
-        verification_percentage = int(
+    verification_percentage = int(
         (sectors_verified / sectors_checked) * 100
-    )
+)
 
-        if verification_percentage >= 100:
-          result = "VERIFIED"
-          device.status = "VERIFIED"
-          sanitization_record.verification_status = "VERIFIED"
-        else:
-          result = "FAILED"
-          device.status = "FAILED"
-          sanitization_record.verification_status = "FAILED"
+    if verification_percentage >= 100:
+        result = "VERIFIED"
+        device.status = "VERIFIED"
+        sanitization_record.verification_status = "VERIFIED"
+    else:
+        result = "FAILED"
+        device.status = "FAILED"
+        sanitization_record.verification_status = "FAILED"
 
-        create_audit_event(
-         db,
-        device,
-        "VERIFICATION_COMPLETED",
-        f"Verification result: {result}"
+    create_audit_event(
+    db,
+    device,
+    "VERIFICATION_COMPLETED",
+    f"Verification result: {result}"
 )
 
     verification_record = models.VerificationRecord(
@@ -762,7 +753,7 @@ def get_certificate_qr(
             detail="Certificate not found for this device"
         )
     verification_url = (
-        f"http://127.0.0.1:8000/"
+        f"{BASE_URL}/"
         f"verify-certificate/"
         f"{certificate.certificate_id}"
     )
