@@ -17,6 +17,8 @@ class DeviceCreate(BaseModel):
     device_type: str
     model: str
     storage: str    
+    device_identifier: str | None = None
+    device_identifier_type: str | None = None
 
 class DeviceResponse(BaseModel):
     id: int
@@ -26,6 +28,8 @@ class DeviceResponse(BaseModel):
     storage: str
     status: str
     user_id: int
+    device_identifier: str | None = None
+    device_identifier_type: str | None = None
 
 class Config:
     from_attributes = True

@@ -20,6 +20,15 @@ class Device(Base):
     device_type = Column(String, nullable=False)
     model = Column(String, nullable=False)
     storage = Column(String, nullable=False)
+    device_identifier = Column(
+    String,
+    nullable=True,
+    index=True
+)
+    device_identifier_type = Column(
+    String,
+    nullable=True
+)
 
     status = Column(
         String,

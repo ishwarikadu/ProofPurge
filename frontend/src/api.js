@@ -78,3 +78,18 @@ export const api = {
 }
 
 export { ApiError }
+export async function verifyCertificate(certificateId) {
+  const response = await fetch(
+    `${API_BASE}/verify-certificate/${certificateId}`
+  )
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}))
+
+    throw new Error(
+      data.detail || 'Certificate could not be verified'
+    )
+  }
+
+  return response.json()
+}

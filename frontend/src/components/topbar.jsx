@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 
 export default function Topbar() {
   const { isAuthenticated, logout } = useAuth()
@@ -26,8 +26,12 @@ export default function Topbar() {
       {isAuthenticated && (
         <div className="nav-links">
           <Link to="/">My Devices</Link>
-          <button className="logout-btn" onClick={handleLogout}>Log out</button>
-        </div>
+          <Link to="/rewards">Rewards</Link>
+          <Link to="/impact">Impact</Link>
+            <button className="logout-btn" onClick={handleLogout}>
+            Log out
+            </button>
+         </div>
       )}
     </div>
   )

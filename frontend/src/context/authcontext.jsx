@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback } from 'react'
 import { api } from '../api'
 
-const AuthContext = createContext(null)
+export const AuthContext = createContext(null)
 
 const STORAGE_KEY = 'proofpurge_token'
 
@@ -28,9 +28,4 @@ export function AuthProvider({ children }) {
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
-
-export function useAuth() {
-  const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
-  return ctx
-}
+ 

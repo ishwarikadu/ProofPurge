@@ -215,13 +215,15 @@ def register_device(
             detail="Device already registered"
         )
 
-    new_device = models.Device(
+    new_device = models.Device (
         device_id=device.device_id,
         device_type=device.device_type,
         model=device.model,
         storage=device.storage,
         status="READY_TO_SANITIZE",
-        user_id=current_user.id
+         device_identifier=device.device_identifier,
+         device_identifier_type=device.device_identifier_type,
+         user_id=current_user.id
     )
 
     db.add(new_device)
