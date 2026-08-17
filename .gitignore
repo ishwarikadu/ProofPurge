@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment variables
+.env
+.env.*
+
+# SQLite database
+*.db
+
+# IDE
+.vscode/
+.idea/
+
+# Node
+node_modules/
