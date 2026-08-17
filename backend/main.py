@@ -433,6 +433,49 @@ def verify_device(
     db.refresh(verification_record)
     return verification_record
 
+@app.get("/b2b/overview")
+def b2b_overview(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    devices = (
+        db.query(models.Device)
+        .filter(
+            models.Device.user_id == current_user.id
+        )
+        .all()
+    )
+
+    total = len(devices)
+
+    certified = sum(
+        1 for d in devices
+        if d.status == "CERTIFIED"
+    )
+
+    ready = sum(
+        1 for d in devices
+        if d.status == "READY_TO_SANITIZE"
+    )
+
+    verifying = sum(
+        1 for d in devices
+        if d.status == "VERIFICATION"
+    )
+
+    sanitized = sum(
+        1 for d in devices
+        if d.status == "SANITIZED"
+    )
+
+    return {
+        "total_devices": total,
+        "certified": certified,
+        "ready_to_sanitize": ready,
+        "sanitized": sanitized,
+        "in_verification": verifying
+    }
+
 @app.post(
     "/devices/{device_id}/certificate",
     response_model=CertificateResponse

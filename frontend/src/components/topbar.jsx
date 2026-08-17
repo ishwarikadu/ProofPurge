@@ -1,39 +1,45 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/useAuth'
 
 export default function Topbar() {
-  const { isAuthenticated, logout } = useAuth()
-  const navigate = useNavigate()
-
-  function handleLogout() {
-    logout()
-    navigate('/login')
-  }
+  const { logout } = useAuth()
 
   return (
-    <div className="topbar">
-   <Link to="/" className="brand" style={{ textDecoration: 'none' }}>
-  <img
-    src="/proofpurgelogo.png"
-    alt="ProofPurge"
-    className="brand-logo"
-  />
+    <header className="topbar">
+      <div className="topbar-inner">
 
-  <p className="brand-tagline">
-    Verified device sanitization &amp; the e-waste trust layer
-  </p>
-</Link>
-      {isAuthenticated && (
-        <div className="nav-links">
-          <Link to="/">My Devices</Link>
+        <div className="topbar-brand">
+
+          <Link to="/" className="topbar-logo-link">
+            <img
+              src="/proofpurgelogo.png"
+              alt="ProofPurge"
+              className="topbar-logo"
+            />
+          </Link>
+
+          <p className="topbar-tagline">
+            Verified device sanitization &amp; the e-waste trust layer
+          </p>
+
+        </div>
+
+        <nav className="topbar-nav">
+          <Link to="/devices">My Devices</Link>
           <Link to="/rewards">Rewards</Link>
           <Link to="/impact">Impact</Link>
-            <button className="logout-btn" onClick={handleLogout}>
+          <Link to="/b2b">Business</Link>
+
+          <button
+            type="button"
+            className="topbar-logout"
+            onClick={logout}
+          >
             Log out
-            </button>
-         </div>
-      )}
-    </div>
+          </button>
+        </nav>
+
+      </div>
+    </header>
   )
 }
-
