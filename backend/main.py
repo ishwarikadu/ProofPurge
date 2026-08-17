@@ -462,35 +462,18 @@ def generate_certificate(
                 f"Current status: {device.status}"
             )
         )
+    
     existing_certificate = (
-    db.query(models.Certificate)
-    .filter(
+            db.query(models.Certificate)
+     .filter(
         models.Certificate.device_id == device.id
-    )
-    .first()
+        )
+           .first()
 )
 
     if existing_certificate:
-     existing_audit_event = (
-        db.query(models.AuditEvent)
-        .filter(
-            models.AuditEvent.device_id == device.id,
-            models.AuditEvent.event_type == "CERTIFICATE_ISSUED"
-        )
-        .first()
-    )
-
-    if existing_audit_event is None:
-        create_audit_event(
-            db,
-            device,
-            "CERTIFICATE_ISSUED",
-            f"Certificate {existing_certificate.certificate_id} issued"
-        )
-
-        db.commit()
-
-        return existing_certificate
+         return existing_certificate
+        
     verification_record = (
         db.query(models.VerificationRecord)
         .filter(
@@ -553,7 +536,7 @@ def generate_certificate(
     create_audit_event(
     db,
     device,
-    "CERTIFICATE_GENERATED",
+    "CERTIFICATE_ISSUED",
     f"Certificate generated with ID: {certificate_id}"
 )
     db.commit()

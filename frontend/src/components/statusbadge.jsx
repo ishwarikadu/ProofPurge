@@ -1,9 +1,9 @@
 const LABELS = {
   READY_TO_SANITIZE: 'Ready to sanitize',
   SANITIZING: 'Sanitizing',
-  VERIFICATION: 'Verifying',
+  VERIFICATION: 'Ready for verification',
   VERIFIED: 'Verified',
-  FAILED: 'Failed — needs retry',
+  FAILED: 'Verification failed',
   MANUAL_REVIEW: 'Manual review',
   CERTIFIED: 'Certified'
 }

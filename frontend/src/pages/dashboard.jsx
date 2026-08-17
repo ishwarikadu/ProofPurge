@@ -64,7 +64,6 @@ export default function Dashboard() {
   return (
     <div className="panel">
       <div className="dash-header">
-        <h2>My Devices</h2>
         <button className="btn btn-primary" onClick={() => setShowForm(s => !s)}>
           {showForm ? 'Cancel' : '+ Register a device'}
         </button>

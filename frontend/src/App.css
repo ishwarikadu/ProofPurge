@@ -48,6 +48,7 @@ html {
 
 body {
   margin: 0;
+  min-height: 100dvh;
   background: var(--bg);
   color: var(--ink);
   font-family:
@@ -93,55 +94,44 @@ button {
 /* ---------- Application shell ---------- */
 
 .app-shell {
-  width: min(1120px, calc(100% - 40px));
+  width: min(1180px, calc(100% - 64px));
+  min-height: 100dvh;
   margin: 0 auto;
-  padding: 26px 0 64px;
+  padding: 42px 0 56px;
 }
 
 /* ---------- Topbar ---------- */
 
 .topbar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  min-height: 52px;
-  margin-bottom: 56px;
+  min-height: 100%;
+  margin-bottom: 38px;
   gap: 24px;
 }
 
 .brand {
   display: flex;
-  align-items: center;
-  gap: 11px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
 }
 
-.brand-mark {
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--line-strong);
-  border-radius: 7px;
-  background: var(--surface-raised);
-  color: var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
+.brand-logo {
+  display: block;
+  width: 270px;
+  max-width: 100%;
+  height: 72px;
+  object-fit: cover;
+  object-position: center;
 }
 
-.brand h1 {
+.brand-tagline {
   margin: 0;
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.brand p {
-  margin: 2px 0 0;
-  color: var(--faint);
-  font-size: 10.5px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
   letter-spacing: 0.01em;
 }
 
@@ -182,7 +172,7 @@ button {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 28px;
+  padding: 38px;
 }
 
 .panel + .panel {
@@ -192,22 +182,22 @@ button {
 /* ---------- Authentication ---------- */
 
 .auth-wrap {
-  width: min(420px, 100%);
-  margin: 72px auto 0;
+  width: min(540px, 100%);
+  margin: 62px auto 0;
 }
 
 .auth-wrap h2 {
-  margin: 0 0 7px;
+  margin: 0 0 8px;
   color: var(--ink);
-  font-size: 22px;
+  font-size: 27px;
   font-weight: 650;
   letter-spacing: -0.025em;
 }
 
 .auth-wrap p.sub {
-  margin: 0 0 28px;
+  margin: 0 0 34px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.6;
 }
 
@@ -222,7 +212,7 @@ label {
 input,
 select {
   width: 100%;
-  height: 42px;
+  height: 50px;
   margin-bottom: 18px;
   padding: 0 12px;
   border: 1px solid var(--line);
@@ -230,7 +220,7 @@ select {
   outline: none;
   background: var(--surface-subtle);
   color: var(--ink);
-  font-size: 13px;
+  font-size: 14px;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
 
@@ -250,11 +240,11 @@ select:focus {
 }
 
 .btn {
-  min-height: 40px;
+  min-height: 48px;
   border: 1px solid transparent;
   border-radius: 7px;
   padding: 0 17px;
-  font-size: 12.5px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   display: inline-flex;
@@ -308,7 +298,7 @@ select:focus {
 }
 
 .btn-sm {
-  min-height: 34px;
+  min-height: 100%;
   padding: 0 13px;
   font-size: 11.5px;
 }

@@ -6,7 +6,7 @@ import StatusBadge from '../components/StatusBadge'
 
 const STEPS = [
   { key: 'REGISTER', label: 'Registered' },
-  { key: 'SANITIZE', label: 'Sanitize' },
+  { key: 'SANITIZE', label: 'Sanitized' },
   { key: 'VERIFY', label: 'Verify' },
   { key: 'CERTIFICATE', label: 'Certificate' }
 ]
@@ -110,7 +110,6 @@ export default function DeviceDetail() {
 
   return (
     <div>
-      <Link to="/" className="back-link">&larr; My Devices</Link>
 
       <div className="panel">
         <div className="detail-header">

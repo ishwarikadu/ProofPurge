@@ -12,13 +12,17 @@ export default function Topbar() {
 
   return (
     <div className="topbar">
-      <Link to="/" className="brand" style={{ textDecoration: 'none' }}>
-        <div className="brand-mark display">PP</div>
-        <div>
-          <h1 className="display">ProofPurge</h1>
-          <p>Verified device sanitization &amp; the e-waste trust layer</p>
-        </div>
-      </Link>
+   <Link to="/" className="brand" style={{ textDecoration: 'none' }}>
+  <img
+    src="/proofpurgelogo.png"
+    alt="ProofPurge"
+    className="brand-logo"
+  />
+
+  <p className="brand-tagline">
+    Verified device sanitization &amp; the e-waste trust layer
+  </p>
+</Link>
       {isAuthenticated && (
         <div className="nav-links">
           <Link to="/">My Devices</Link>
@@ -28,3 +32,4 @@ export default function Topbar() {
     </div>
   )
 }
+
